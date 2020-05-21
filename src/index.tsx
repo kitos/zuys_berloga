@@ -5,7 +5,7 @@ import { Canvas } from 'react-three-fiber'
 
 import { Text } from './Text'
 
-let App = () => {
+let MouseRotatingGroup: React.FC<{}> = ({ children }) => {
   let ref = useRef()
 
   useEffect(() => {
@@ -23,15 +23,20 @@ let App = () => {
     return () => document.removeEventListener('mousemove', listener)
   }, [])
 
+  return <group ref={ref}>{children}</group>
+}
+
+let App = () => {
   return (
     <Canvas camera={{ position: [0, 0, 35] }}>
       <Suspense fallback={null}>
         <ambientLight intensity={2} />
         <pointLight position={[40, 40, 40]} />
-        <group ref={ref}>
+
+        <MouseRotatingGroup>
           <Text position={[0, 5, 0]}>ZUYS</Text>
           <Text position={[0, 0, 0]}>BERLOGA</Text>
-        </group>
+        </MouseRotatingGroup>
       </Suspense>
     </Canvas>
   )
