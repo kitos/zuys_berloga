@@ -1,8 +1,9 @@
 import { render } from 'react-dom'
 import * as React from 'react'
-import { Suspense, useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { Canvas } from 'react-three-fiber'
+import Peer from 'peerjs'
 
 import { Text } from './Text'
 
@@ -27,53 +28,110 @@ let MouseRotatingGroup: React.FC<{}> = ({ children }) => {
   return <group ref={ref}>{children}</group>
 }
 
-let initWebcamInput = async () => {
-  let stream = await navigator.mediaDevices.getUserMedia({ video: true })
-  let video = document.createElement('video')
+let getWebcamStream = () => navigator.mediaDevices.getUserMedia({ video: true })
 
-  video.srcObject = stream
-  await video.play()
+let VideoMesh = ({ stream, position, size }) => {
+  let video = useMemo(() => {
+    let video = document.createElement('video')
 
-  return video
+    video.srcObject = stream
+    video.play()
+
+    return video
+  }, [stream])
+
+  return (
+    <mesh position={position}>
+      <boxBufferGeometry attach="geometry" args={size} />
+
+      <meshBasicMaterial attach="material">
+        <videoTexture attach="map" format={THREE.RGBFormat} args={[video]} />
+      </meshBasicMaterial>
+    </mesh>
+  )
 }
 
-let VideoMesh = ({ video }) => (
-  <mesh position={[0, -7, 0]}>
-    <boxBufferGeometry attach="geometry" args={[25, 15, 5]} />
-
-    <meshBasicMaterial attach="material">
-      <videoTexture
-        attach="map"
-        minFilter={THREE.LinearFilter}
-        magFilter={THREE.LinearFilter}
-        format={THREE.RGBFormat}
-        args={[video]}
-      />
-    </meshBasicMaterial>
-  </mesh>
-)
+type ThenArg<T> = T extends PromiseLike<infer U> ? U : T
 
 let App = () => {
-  let [video, setVideo] = useState<HTMLVideoElement>()
+  let [webcamStream, setWebStream] = useState<
+    ThenArg<ReturnType<typeof getWebcamStream>>
+  >()
+  let [peer] = useState(() => new Peer())
+  let connectToRef = useRef<HTMLInputElement>()
+  let [incomingStream, setIncoming] = useState()
 
   useEffect(() => {
-    initWebcamInput().then(setVideo)
+    peer.on('call', (call) => {
+      call.answer(webcamStream)
+      call.on('stream', setIncoming)
+    })
+  })
+
+  useEffect(() => {
+    getWebcamStream().then(setWebStream)
   })
 
   return (
-    <Canvas camera={{ position: [0, 0, 35] }}>
-      <Suspense fallback={null}>
-        <ambientLight intensity={2} />
-        <pointLight position={[40, 40, 40]} />
+    <main style={{ height: '100%' }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          background: '#eee',
+          maxWidth: 300,
+        }}
+      >
+        <label>
+          Your id: <input value={peer.id || ''} type="text" disabled />
+        </label>
 
-        <MouseRotatingGroup>
-          <Text position={[0, 10, 0]}>ZUYS</Text>
-          <Text position={[0, 5, 0]}>BERLOGA</Text>
+        <label>
+          Connect to: <input ref={connectToRef} type="text" />
+        </label>
 
-          {video && <VideoMesh video={video} />}
-        </MouseRotatingGroup>
-      </Suspense>
-    </Canvas>
+        {webcamStream ? (
+          <button
+            onClick={() => {
+              let call = peer.call(connectToRef.current.value, webcamStream)
+              call.on('stream', setIncoming)
+            }}
+          >
+            Connect
+          </button>
+        ) : (
+          'Loading...'
+        )}
+      </div>
+
+      <Canvas camera={{ position: [0, 0, 35] }}>
+        <Suspense fallback={null}>
+          <ambientLight intensity={2} />
+          <pointLight position={[40, 40, 40]} />
+
+          <MouseRotatingGroup>
+            <Text position={[0, 10, 0]}>ZUYS</Text>
+            <Text position={[0, 5, 0]}>BERLOGA</Text>
+
+            {incomingStream && (
+              <VideoMesh
+                stream={incomingStream}
+                position={[0, -7, 0]}
+                size={[25, 15, 5]}
+              />
+            )}
+          </MouseRotatingGroup>
+
+          {webcamStream && (
+            <VideoMesh
+              stream={webcamStream}
+              position={[25, 25, 0]}
+              size={[16, 12, 1]}
+            />
+          )}
+        </Suspense>
+      </Canvas>
+    </main>
   )
 }
 
