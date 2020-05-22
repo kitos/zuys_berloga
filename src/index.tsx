@@ -29,7 +29,10 @@ let MouseRotatingGroup: React.FC<{}> = ({ children }) => {
 }
 
 let getWebcamStream = () =>
-  navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+  navigator.mediaDevices.getUserMedia({
+    video: { facingMode: 'user' },
+    audio: { noiseSuppression: true, echoCancellation: true },
+  })
 
 let VideoMesh = ({ stream, position, size }) => {
   let video = useMemo(() => {
