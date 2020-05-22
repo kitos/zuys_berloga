@@ -119,6 +119,7 @@ let App = () => {
           {webcamStream && (
             <VideoMesh
               stream={webcamStream}
+              muted
               position={[25, 25, 0]}
               size={[16, 12, 1]}
             />

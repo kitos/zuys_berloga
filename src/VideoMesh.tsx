@@ -2,10 +2,11 @@ import * as React from 'react'
 import { useMemo } from 'react'
 import * as THREE from 'three'
 
-export let VideoMesh = ({ stream, position, size }) => {
+export let VideoMesh = ({ stream, muted = false, position, size }) => {
   let video = useMemo(() => {
     let video = document.createElement('video')
 
+    video.muted = muted
     video.srcObject = stream
     video.play()
 
