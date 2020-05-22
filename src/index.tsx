@@ -1,11 +1,12 @@
 import { render } from 'react-dom'
 import * as React from 'react'
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
-import * as THREE from 'three'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { Canvas } from 'react-three-fiber'
 import Peer from 'peerjs'
 
 import { Text } from './Text'
+import { DeviceSelect } from './DeviceSelect'
+import { VideoMesh } from './VideoMesh'
 
 let MouseRotatingGroup: React.FC<{}> = ({ children }) => {
   let ref = useRef()
@@ -28,39 +29,8 @@ let MouseRotatingGroup: React.FC<{}> = ({ children }) => {
   return <group ref={ref}>{children}</group>
 }
 
-let getWebcamStream = () =>
-  navigator.mediaDevices.getUserMedia({
-    video: { facingMode: 'user' },
-    audio: { noiseSuppression: true, echoCancellation: true },
-  })
-
-let VideoMesh = ({ stream, position, size }) => {
-  let video = useMemo(() => {
-    let video = document.createElement('video')
-
-    video.srcObject = stream
-    video.play()
-
-    return video
-  }, [stream])
-
-  return (
-    <mesh position={position}>
-      <boxBufferGeometry attach="geometry" args={size} />
-
-      <meshBasicMaterial attach="material">
-        <videoTexture attach="map" format={THREE.RGBFormat} args={[video]} />
-      </meshBasicMaterial>
-    </mesh>
-  )
-}
-
-type ThenArg<T> = T extends PromiseLike<infer U> ? U : T
-
 let App = () => {
-  let [webcamStream, setWebStream] = useState<
-    ThenArg<ReturnType<typeof getWebcamStream>>
-  >()
+  let [webcamStream, setWebcamStream] = useState()
   let [peer, setPeer] = useState(() => {
     let p = new Peer({
       debug: new URL(location.href).searchParams.get('debug') ?? 0,
@@ -93,10 +63,6 @@ let App = () => {
     return () => peer.off('call', answer)
   }, [peer, webcamStream])
 
-  useEffect(() => {
-    getWebcamStream().then(setWebStream)
-  }, [])
-
   return (
     <main style={{ height: '100%' }}>
       <div
@@ -104,9 +70,11 @@ let App = () => {
           display: 'flex',
           flexDirection: 'column',
           background: '#eee',
-          maxWidth: 300,
+          maxWidth: 400,
         }}
       >
+        <DeviceSelect onChange={setWebcamStream} />
+
         <label>
           Your id: <input value={peer.id || ''} type="text" disabled />
         </label>
