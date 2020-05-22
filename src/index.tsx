@@ -28,7 +28,8 @@ let MouseRotatingGroup: React.FC<{}> = ({ children }) => {
   return <group ref={ref}>{children}</group>
 }
 
-let getWebcamStream = () => navigator.mediaDevices.getUserMedia({ video: true })
+let getWebcamStream = () =>
+  navigator.mediaDevices.getUserMedia({ video: true, audio: true })
 
 let VideoMesh = ({ stream, position, size }) => {
   let video = useMemo(() => {
@@ -66,11 +67,13 @@ let App = () => {
       call.answer(webcamStream)
       call.on('stream', setIncoming)
     })
-  })
+
+    peer.on('error', (e) => console.error('Peer error:', e))
+  }, [peer])
 
   useEffect(() => {
     getWebcamStream().then(setWebStream)
-  })
+  }, [])
 
   return (
     <main style={{ height: '100%' }}>
@@ -94,7 +97,9 @@ let App = () => {
           <button
             onClick={() => {
               let call = peer.call(connectToRef.current.value, webcamStream)
+
               call.on('stream', setIncoming)
+              call.on('error', (e) => console.error('Calls error:', e))
             }}
           >
             Connect
