@@ -58,18 +58,33 @@ let App = () => {
   let [webcamStream, setWebStream] = useState<
     ThenArg<ReturnType<typeof getWebcamStream>>
   >()
-  let [peer] = useState(() => new Peer())
+  let [peer, setPeer] = useState(() => {
+    let p = new Peer({
+      debug: new URL(location.href).searchParams.get('debug') ?? 0,
+    })
+
+    p.on('open', () => setPeer(p)) // force update
+
+    return p
+  })
   let connectToRef = useRef<HTMLInputElement>()
+
+  let [call, setCall] = useState()
   let [incomingStream, setIncoming] = useState()
+
+  useEffect(() => {
+    if (call) {
+      call.on('stream', setIncoming)
+      call.on('error', (e) => console.error('Calls error:', e))
+    }
+  }, [call])
 
   useEffect(() => {
     peer.on('call', (call) => {
       call.answer(webcamStream)
-      call.on('stream', setIncoming)
+      setCall(call)
     })
-
-    peer.on('error', (e) => console.error('Peer error:', e))
-  }, [peer])
+  }, [peer, webcamStream])
 
   useEffect(() => {
     getWebcamStream().then(setWebStream)
@@ -98,8 +113,7 @@ let App = () => {
             onClick={() => {
               let call = peer.call(connectToRef.current.value, webcamStream)
 
-              call.on('stream', setIncoming)
-              call.on('error', (e) => console.error('Calls error:', e))
+              setCall(call)
             }}
           >
             Connect
