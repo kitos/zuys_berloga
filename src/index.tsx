@@ -1,13 +1,28 @@
 import { render } from 'react-dom'
 import * as React from 'react'
 import { Suspense, useEffect, useRef, useState } from 'react'
-import { Canvas } from 'react-three-fiber'
+import { Canvas, useFrame } from 'react-three-fiber'
 import Peer from 'peerjs'
 
 import { Text } from './Text'
 import { DeviceSelect } from './DeviceSelect'
 import { VideoMesh } from './VideoMesh'
 import { MouseRotatingGroup } from './MouseRotatingGroup'
+
+let RotatingVideo = ({ stream }) => {
+  let localVideoRef = useRef()
+  useFrame(() => (localVideoRef.current.rotation.y += 0.01))
+
+  return (
+    <VideoMesh
+      ref={localVideoRef}
+      stream={stream}
+      muted
+      position={[25, 15, 0]}
+      size={[10, 10, 10]}
+    />
+  )
+}
 
 let App = () => {
   let { searchParams } = new URL(location.href)
@@ -103,14 +118,7 @@ let App = () => {
             )}
           </MouseRotatingGroup>
 
-          {webcamStream && (
-            <VideoMesh
-              stream={webcamStream}
-              muted
-              position={[25, 25, 0]}
-              size={[16, 12, 1]}
-            />
-          )}
+          {webcamStream && <RotatingVideo stream={webcamStream} />}
         </Suspense>
       </Canvas>
     </main>
