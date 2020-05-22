@@ -10,10 +10,11 @@ import { VideoMesh } from './VideoMesh'
 import { MouseRotatingGroup } from './MouseRotatingGroup'
 
 let App = () => {
+  let { searchParams } = new URL(location.href)
   let [webcamStream, setWebcamStream] = useState()
   let [peer, setPeer] = useState(() => {
     let p = new Peer({
-      debug: new URL(location.href).searchParams.get('debug') ?? 0,
+      debug: searchParams.get('debug') ?? 0,
     })
 
     p.on('open', () => setPeer(p)) // force update
@@ -21,6 +22,17 @@ let App = () => {
     return p
   })
   let connectToRef = useRef<HTMLInputElement>()
+  let [callTo, setCallTo] = useState(searchParams.get('callTo'))
+
+  useEffect(() => {
+    if (callTo && webcamStream) {
+      console.log(callTo)
+
+      let call = peer.call(callTo, webcamStream)
+
+      setCall(call)
+    }
+  }, [callTo, webcamStream])
 
   let [call, setCall] = useState()
   let [incomingStream, setIncoming] = useState()
@@ -56,7 +68,10 @@ let App = () => {
         <DeviceSelect onChange={setWebcamStream} />
 
         <label>
-          Your id: <input value={peer.id || ''} type="text" disabled />
+          Your id: <input value={peer.id || ''} type="text" disabled />{' '}
+          <a href={`?callTo=${peer.id}`} target="_blank">
+            Link
+          </a>
         </label>
 
         <label>
@@ -64,13 +79,7 @@ let App = () => {
         </label>
 
         {webcamStream ? (
-          <button
-            onClick={() => {
-              let call = peer.call(connectToRef.current.value, webcamStream)
-
-              setCall(call)
-            }}
-          >
+          <button onClick={() => setCallTo(connectToRef.current.value)}>
             Connect
           </button>
         ) : (
