@@ -7,27 +7,7 @@ import Peer from 'peerjs'
 import { Text } from './Text'
 import { DeviceSelect } from './DeviceSelect'
 import { VideoMesh } from './VideoMesh'
-
-let MouseRotatingGroup: React.FC<{}> = ({ children }) => {
-  let ref = useRef()
-
-  useEffect(() => {
-    let listener = (e) => {
-      let { innerWidth: windowWidth, innerHeight: windowHeight } = window
-
-      let halfWidth = windowWidth / 2
-      let halfHeight = windowHeight / 2
-      ref.current.rotation.x = ((e.offsetY - halfHeight) / halfHeight) * 0.7
-      ref.current.rotation.y = ((e.offsetX - halfWidth) / halfWidth) * 0.7
-    }
-
-    document.addEventListener('mousemove', listener)
-
-    return () => document.removeEventListener('mousemove', listener)
-  }, [])
-
-  return <group ref={ref}>{children}</group>
-}
+import { MouseRotatingGroup } from './MouseRotatingGroup'
 
 let App = () => {
   let [webcamStream, setWebcamStream] = useState()
