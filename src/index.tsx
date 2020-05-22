@@ -26,8 +26,6 @@ let App = () => {
 
   useEffect(() => {
     if (callTo && webcamStream) {
-      console.log(callTo)
-
       let call = peer.call(callTo, webcamStream)
 
       setCall(call)
