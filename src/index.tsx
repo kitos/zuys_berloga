@@ -80,10 +80,14 @@ let App = () => {
   }, [call])
 
   useEffect(() => {
-    peer.on('call', (call) => {
+    let answer = (call) => {
       call.answer(webcamStream)
       setCall(call)
-    })
+    }
+
+    peer.on('call', answer)
+
+    return () => peer.off('call', answer)
   }, [peer, webcamStream])
 
   useEffect(() => {
